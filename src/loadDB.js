@@ -1,7 +1,7 @@
 const autos = require("./json/autos.json");
 const categorias = require("./json/categorias.json");
 const { encrypt } = require("./helpers/handleCrypt");
-const { Admin, Auto, Categoria } = require("./db.js");
+const { User, Auto, Categoria } = require("./db.js");
 require("dotenv").config();
 
 async function fnCategorias() {
@@ -39,9 +39,11 @@ async function fnAutos() {
 }
 
 async function fnAdmin() {
-  const admin = await Admin.create({
+  await User.create({
+    name: process.env.ADMIN_NAME || "Admin",
     email: process.env.ADMIN_EMAIL,
     pass: await encrypt(process.env.ADMIN_PASS),
+    rol: "admin",
   });
 }
 

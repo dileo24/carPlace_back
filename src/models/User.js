@@ -23,7 +23,7 @@ module.exports = sequelize => {
         allowNull: false,
       },
       rol: {
-        type: DataTypes.ENUM("supervisor", "vendedor", "publicador_vendedor", "socio"),
+        type: DataTypes.ENUM("admin", "supervisor", "vendedor", "publicador_vendedor", "socio"),
         allowNull: false,
       },
       // Color hex asignado por el admin (ej. para el socio) — usado para

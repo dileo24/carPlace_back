@@ -70,10 +70,8 @@ const enviarMedia = async (req, res) => {
 
     if (!autorNombre && userId) {
       try {
-        const { User, Admin } = require("../../../db");
-        const record =
-          (await User.findByPk(Number(userId)).catch(() => null)) ||
-          (await Admin.findByPk(Number(userId)).catch(() => null));
+        const { User } = require("../../../db");
+        const record = await User.findByPk(Number(userId)).catch(() => null);
         if (record) {
           const n = record.nombre || record.name || "";
           const a = record.apellido || "";

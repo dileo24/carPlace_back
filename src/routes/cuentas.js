@@ -6,7 +6,7 @@ const eliminarDeuda = require("../middlewares/cuentas/eliminarDeuda");
 
 const router = Router();
 
-// Cuenta corriente entre socios (Admin): solo admins la ven y la editan.
+// Cuenta corriente entre socios: solo usuarios con rol admin la ven y la editan.
 router.use(authMiddleware, requireRole("admin"));
 
 router.get("/", listarDeudas);

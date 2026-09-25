@@ -1,6 +1,7 @@
 // models/Deuda.js
-// Cuenta corriente interna entre los socios (Admin): quién le debe a quién,
-// cuánto y por qué. No tiene relación con Venta/Auto — es puramente interno.
+// Cuenta corriente interna entre los socios (usuarios con rol admin): quién
+// le debe a quién, cuánto y por qué. No tiene relación con Venta/Auto — es
+// puramente interno.
 const { DataTypes } = require("sequelize");
 
 module.exports = sequelize => {
@@ -25,7 +26,7 @@ module.exports = sequelize => {
         type: DataTypes.TEXT,
         allowNull: false,
       },
-      // Admin.id de quién debe y de quién tiene el dinero a favor.
+      // User.id (rol admin) de quién debe y de quién tiene el dinero a favor.
       deudorId: {
         type: DataTypes.INTEGER,
         allowNull: false,

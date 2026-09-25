@@ -1,6 +1,6 @@
 // controllers/auth/login.js
 const jwt = require("jsonwebtoken");
-const { Admin, User } = require("../../db");
+const { User } = require("../../db");
 const { checkers } = require("../../helpers/checkers");
 const { compare } = require("../../helpers/handleCrypt");
 require("dotenv").config();
@@ -19,14 +19,8 @@ const login = async (req, res) => {
 
     email = email.trim().toLowerCase();
 
-    // Busca en Admin primero, si no encuentra busca en User
-    let account = await Admin.findOne({ where: { email } });
-    let rol = "admin";
-
-    if (!account) {
-      account = await User.findOne({ where: { email } });
-      rol = account?.rol ?? null;
-    }
+    const account = await User.findOne({ where: { email } });
+    const rol = account?.rol ?? null;
 
     if (!account) {
       return res.status(400).json({

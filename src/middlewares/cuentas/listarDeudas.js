@@ -1,5 +1,5 @@
 // controllers/cuentas/listarDeudas.js
-const { Deuda, Admin } = require("../../db");
+const { Deuda, User } = require("../../db");
 
 // GET /cuentas — historial completo + saldo neto por socio y moneda, para que
 // el frontend pinte en verde/rojo según quién esté logueado.
@@ -7,7 +7,7 @@ const listarDeudas = async (req, res) => {
   try {
     const [deudas, admins] = await Promise.all([
       Deuda.findAll({ order: [["fecha", "DESC"], ["id", "DESC"]] }),
-      Admin.findAll({ attributes: ["id", "name", "email"] }),
+      User.findAll({ where: { rol: "admin" }, attributes: ["id", "name", "email"] }),
     ]);
 
     const nombrePorId = new Map(admins.map(a => [a.id, a.name || a.email]));

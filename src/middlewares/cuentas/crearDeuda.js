@@ -1,8 +1,8 @@
 // controllers/cuentas/crearDeuda.js
-const { Deuda, Admin } = require("../../db");
+const { Deuda, User } = require("../../db");
 const hoyArgentina = require("../../services/hoyArgentina");
 
-// POST /cuentas — carga una nueva deuda entre socios (Admin ↔ Admin).
+// POST /cuentas — carga una nueva deuda entre socios (usuarios con rol admin).
 const crearDeuda = async (req, res) => {
   try {
     const { monto, moneda, motivo, deudorId, acreedorId, fecha } = req.body;
@@ -21,11 +21,11 @@ const crearDeuda = async (req, res) => {
     }
 
     const [deudor, acreedor] = await Promise.all([
-      Admin.findByPk(deudorId),
-      Admin.findByPk(acreedorId),
+      User.findByPk(deudorId),
+      User.findByPk(acreedorId),
     ]);
     if (!deudor || !acreedor) {
-      return res.status(404).json({ status: 404, error: "Admin no encontrado" });
+      return res.status(404).json({ status: 404, error: "Usuario no encontrado" });
     }
 
     const deuda = await Deuda.create({

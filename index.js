@@ -12,7 +12,7 @@ const log = msg => {
 const server = require("./src/app.js");
 const { conn } = require("./src/db.js");
 const { fnCategorias, fnAutos, fnAdmin } = require("./src/loadDB.js");
-const { Categoria, Admin } = require("./src/db.js");
+const { Categoria, User } = require("./src/db.js");
 
 log("Iniciando servidor...");
 
@@ -72,7 +72,7 @@ conn
           n => !nombresExistentes.includes(n),
         );
         if (categoriasFaltantes.length > 0) await fnCategorias();
-        if ((await Admin.count()) === 0) await fnAdmin();
+        if ((await User.count({ where: { rol: "admin" } })) === 0) await fnAdmin();
         log("Arranque completo OK");
       } catch (err) {
         log("ERROR post-listen: " + err.message + "\n" + err.stack);

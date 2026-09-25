@@ -2,7 +2,7 @@
 const { User } = require("../../db");
 const { encrypt } = require("../../helpers/handleCrypt");
 
-const VALID_ROLES = ["supervisor", "vendedor", "publicador_vendedor", "socio"];
+const VALID_ROLES = ["admin", "supervisor", "vendedor", "publicador_vendedor", "socio"];
 
 const createUser = async (req, res) => {
   try {
