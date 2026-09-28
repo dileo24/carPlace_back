@@ -53,7 +53,7 @@ async function generarYEnviarBackup() {
   const destinatarios = admins.map(a => a.email).join(",");
 
   await transporter.sendMail({
-    from: process.env.EMAIL_FROM,
+    from: `"Charly y Joaco Automotores" <${process.env.EMAIL_FROM}>`,
     to: destinatarios,
     subject: `Backup semanal — ${DB_NAME} (${fecha})`,
     text: `Backup automático de la base de datos generado el ${fecha}. Se adjunta comprimido (.sql.gz).`,
