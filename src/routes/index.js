@@ -20,6 +20,7 @@ const marcasRouter = require("./marcas");
 const mercadolibreRouter = require("./mercadolibre");
 const publicacionesRouter = require("./publicaciones");
 const cuentasRouter = require("./cuentas");
+const gastosRouter = require("./gastos");
 
 router.use(express.json());
 router.use(express.urlencoded({ extended: true }));
@@ -42,6 +43,7 @@ router.use("/marcas", marcasRouter);
 router.use("/mercadolibre", mercadolibreRouter);
 router.use("/publicaciones", publicacionesRouter);
 router.use("/cuentas", cuentasRouter);
+router.use("/gastos", gastosRouter);
 
 router.post("/compramos-tu-auto", sendCarFormEmail, async (req, res) => {
   try {
