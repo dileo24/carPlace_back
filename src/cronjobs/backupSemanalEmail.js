@@ -7,6 +7,7 @@ const zlib = require("zlib");
 const os = require("os");
 const nodemailer = require("nodemailer");
 const { logCron } = require("../services/cronLog");
+const { User } = require("../db");
 require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
@@ -48,9 +49,12 @@ async function generarYEnviarBackup() {
   });
   fs.unlink(sqlPath, () => {});
 
+  const admins = await User.findAll({ where: { rol: "admin" }, attributes: ["email"] });
+  const destinatarios = admins.map(a => a.email).join(",");
+
   await transporter.sendMail({
     from: process.env.EMAIL_FROM,
-    to: process.env.ADMIN_EMAIL,
+    to: destinatarios,
     subject: `Backup semanal — ${DB_NAME} (${fecha})`,
     text: `Backup automático de la base de datos generado el ${fecha}. Se adjunta comprimido (.sql.gz).`,
     attachments: [{ filename: gzFilename, path: gzPath }],

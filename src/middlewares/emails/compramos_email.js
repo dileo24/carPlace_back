@@ -1,4 +1,5 @@
 const nodeMailer = require("nodemailer");
+const { User } = require("../../db");
 require("dotenv").config();
 
 const transporter = nodeMailer.createTransport({
@@ -22,9 +23,12 @@ const sendCarFormEmail = async (req, res, next) => {
       });
     }
 
+    const admins = await User.findAll({ where: { rol: "admin" }, attributes: ["email"] });
+    const destinatarios = admins.map(a => a.email).join(",");
+
     const mailOptions = {
       from: email,
-      to: process.env.ADMIN_EMAIL,
+      to: destinatarios,
       subject: `Solicitud de venta de vehículo - ${marca} ${modelo}`,
       html: `
         <div style="width: 100%; background-color: #f5f5f5; padding: 20px; box-sizing: border-box;">
