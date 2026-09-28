@@ -27,13 +27,32 @@ module.exports = sequelize => {
         allowNull: false,
       },
       // User.id (rol admin) de quién debe y de quién tiene el dinero a favor.
+      // Nulos cuando esa punta es un tercero ajeno al sistema ("Otro") — en
+      // ese caso van completos deudorNombre/deudorTelefono (o los de
+      // acreedor, según cuál punta sea el tercero).
       deudorId: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
+      },
+      deudorNombre: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      deudorTelefono: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
       acreedorId: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
+      },
+      acreedorNombre: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      acreedorTelefono: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
       creadoPorId: {
         type: DataTypes.INTEGER,

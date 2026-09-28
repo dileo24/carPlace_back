@@ -11,23 +11,35 @@ const listarDeudas = async (req, res) => {
     ]);
 
     const nombrePorId = new Map(admins.map(a => [a.id, a.name || a.email]));
+    // Si la punta es un usuario (id), resuelve su nombre real; si es "Otro"
+    // (sin id), usa el nombre suelto que se guardó con la deuda.
+    const resolverNombre = (id, nombreOtro) => (id ? (nombrePorId.get(id) ?? "—") : nombreOtro || "—");
 
-    const deudasResp = deudas.map(d => ({
-      ...d.toJSON(),
-      deudorNombre: nombrePorId.get(d.deudorId) ?? "—",
-      acreedorNombre: nombrePorId.get(d.acreedorId) ?? "—",
-    }));
+    const deudasResp = deudas.map(d => {
+      const plain = d.toJSON();
+      return {
+        ...plain,
+        deudorNombre: resolverNombre(plain.deudorId, plain.deudorNombre),
+        acreedorNombre: resolverNombre(plain.acreedorId, plain.acreedorNombre),
+      };
+    });
 
-    // Saldo neto por admin y moneda: positivo = le deben (a favor), negativo = debe.
+    // Saldo neto por admin y moneda: positivo = le deben (a favor), negativo =
+    // debe. Un "Otro" no tiene saldo propio (no es un usuario del sistema),
+    // así que solo se acumula del lado que sí sea un admin.
     const saldos = {};
     for (const admin of admins) {
       saldos[admin.id] = { ARS: 0, USD: 0 };
     }
     for (const d of deudas) {
-      if (!saldos[d.deudorId]) saldos[d.deudorId] = { ARS: 0, USD: 0 };
-      if (!saldos[d.acreedorId]) saldos[d.acreedorId] = { ARS: 0, USD: 0 };
-      saldos[d.deudorId][d.moneda] -= d.monto;
-      saldos[d.acreedorId][d.moneda] += d.monto;
+      if (d.deudorId) {
+        if (!saldos[d.deudorId]) saldos[d.deudorId] = { ARS: 0, USD: 0 };
+        saldos[d.deudorId][d.moneda] -= d.monto;
+      }
+      if (d.acreedorId) {
+        if (!saldos[d.acreedorId]) saldos[d.acreedorId] = { ARS: 0, USD: 0 };
+        saldos[d.acreedorId][d.moneda] += d.monto;
+      }
     }
 
     res.status(200).json({
