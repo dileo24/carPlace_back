@@ -44,8 +44,7 @@ conn
     try {
       await migrar(log);
     } catch (err) {
-      log("ERROR en migraciones: " + err.message + "
-" + err.stack);
+      log("ERROR en migraciones: " + err.message + "\n" + err.stack);
     }
     require("./src/cronjobs/rotarPrecioInfo.js");
     log("Cron de rotación de precios iniciado");
