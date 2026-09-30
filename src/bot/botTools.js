@@ -4,7 +4,7 @@ const tools = [
     function: {
       name: "buscarAuto",
       description:
-        "OBLIGATORIO llamar antes de mencionar cualquier auto, en CADA pregunta nueva del cliente. Busca el stock real de SportQuatro. Cada consulta es independiente — una búsqueda anterior nunca reemplaza a una nueva.",
+        "OBLIGATORIO llamar antes de mencionar cualquier auto, en CADA pregunta nueva del cliente. Busca el stock real de Car Place. Cada consulta es independiente — una búsqueda anterior nunca reemplaza a una nueva.",
       parameters: {
         type: "object",
         properties: {

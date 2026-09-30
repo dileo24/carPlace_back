@@ -47,7 +47,7 @@ async function verificarYEnviarRecordatorio() {
       `9:30 a 13:00 hs. | 16:00 a 20:00 hs.\n\n` +
       `Cuando puedas, te pedimos que nos confirmes aproximadamente en qué horario vas a pasar, así podemos aguardarte.\n\n` +
       `Este aviso se envía automáticamente con anticipación para facilitar la organización de los pagos.\n\n` +
-      `Sportquatro Automotores`;
+      `Car Place`;
 
     try {
       await sendWhatsAppTemplate(telefono, "recordatorio_cuota_pago", [

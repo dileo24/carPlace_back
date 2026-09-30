@@ -11,7 +11,8 @@ const log = msg => {
 
 const server = require("./src/app.js");
 const { conn } = require("./src/db.js");
-const { fnCategorias, fnAutos } = require("./src/loadDB.js");
+const { fnCategorias, fnMarcas } = require("./src/loadDB.js");
+const { migrar } = require("./src/services/migraciones.js");
 const { Categoria } = require("./src/db.js");
 
 log("Iniciando servidor...");
@@ -23,9 +24,11 @@ const CATEGORIAS_ESPERADAS = [
   "4 Puertas",
   "3 Puertas",
   "Utilitario",
-  "Clásicos",
+  "Clásico",
   "0km",
   "Moto",
+  "Sedán",
+  "Hatchback",
 ];
 const PORT = process.env.PORT || 3001;
 const ffmpegPath = require("ffmpeg-static");
@@ -38,6 +41,12 @@ try {
 conn
   .sync()
   .then(async () => {
+    try {
+      await migrar(log);
+    } catch (err) {
+      log("ERROR en migraciones: " + err.message + "
+" + err.stack);
+    }
     require("./src/cronjobs/rotarPrecioInfo.js");
     log("Cron de rotación de precios iniciado");
     require("./src/cronjobs/limpiarTareas.js");
@@ -46,8 +55,8 @@ conn
     log("Cron de limpieza de consultas iniciado");
     require("./src/cronjobs/recuperarMensajes.js");
     log("Cron de recuperación de mensajes iniciado");
-    require("./src/cronjobs/backupSemanalEmail.js");
-    log("Cron de backup semanal por mail iniciado");
+    require("./src/cronjobs/backupMensualEmail.js");
+    log("Cron de backup mensual por mail iniciado");
     require("./src/cronjobs/expirarPublicaciones.js");
     log("Cron de expiración de publicaciones iniciado");
     require("./src/cronjobs/recordatorioCuotaExcepcional.js");
@@ -72,6 +81,7 @@ conn
           n => !nombresExistentes.includes(n),
         );
         if (categoriasFaltantes.length > 0) await fnCategorias();
+        if (await fnMarcas()) log("Marcas clonadas de sportquatro insertadas");
         log("Arranque completo OK");
       } catch (err) {
         log("ERROR post-listen: " + err.message + "\n" + err.stack);

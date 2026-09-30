@@ -1,4 +1,4 @@
-// cronjobs/backupSemanalEmail.js
+// cronjobs/backupMensualEmail.js
 const cron = require("node-cron");
 const { exec } = require("child_process");
 const path = require("path");
@@ -20,9 +20,9 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Mismo dump que el botón manual de /backup (routes/backup.js), pero
+// Es el único backup del sistema (ya no hay descarga manual): dump de la base
 // comprimido con zlib (built-in de Node, no depende de que el server tenga
-// un binario `gzip` en el PATH) — más liviano para mandar por mail y menos
+// un binario `gzip` en el PATH) — liviano para mandar por mail y con menos
 // chance de que algún filtro antispam lo bloquee por ser un .sql "suelto".
 async function generarYEnviarBackup() {
   const { DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME } = process.env;
@@ -53,9 +53,9 @@ async function generarYEnviarBackup() {
   const destinatarios = admins.map(a => a.email).join(",");
 
   await transporter.sendMail({
-    from: `"Charly y Joaco Automotores" <${process.env.EMAIL_FROM}>`,
+    from: `"Car Place" <${process.env.EMAIL_FROM}>`,
     to: destinatarios,
-    subject: `Backup semanal — ${DB_NAME} (${fecha})`,
+    subject: `Backup mensual — ${DB_NAME} (${fecha})`,
     text: `Backup automático de la base de datos generado el ${fecha}. Se adjunta comprimido (.sql.gz).`,
     attachments: [{ filename: gzFilename, path: gzPath }],
   });
@@ -64,16 +64,16 @@ async function generarYEnviarBackup() {
 }
 
 cron.schedule(
-  "0 4 * * 0", // domingos a las 4am
+  "0 4 1 * *", // día 1 de cada mes a las 4am
   async () => {
-    console.log("[CRON] Generando y enviando backup semanal por mail...");
+    console.log("[CRON] Generando y enviando backup mensual por mail...");
     try {
       await generarYEnviarBackup();
-      console.log("[CRON] Backup semanal enviado por mail.");
-      await logCron("backup_semanal", "ok", "Backup enviado por mail correctamente.");
+      console.log("[CRON] Backup mensual enviado por mail.");
+      await logCron("backup_mensual", "ok", "Backup enviado por mail correctamente.");
     } catch (err) {
-      console.error("[CRON] Error al generar/enviar backup semanal:", err.message);
-      await logCron("backup_semanal", "error", "Error al generar o enviar el backup semanal", err.message);
+      console.error("[CRON] Error al generar/enviar backup mensual:", err.message);
+      await logCron("backup_mensual", "error", "Error al generar o enviar el backup mensual", err.message);
     }
   },
   { timezone: "America/Argentina/Cordoba" },

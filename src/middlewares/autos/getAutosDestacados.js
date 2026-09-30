@@ -16,7 +16,7 @@ const getAutosDestacados = async (req, res, next) => {
       order: [["precio", "ASC"]],
     });
 
-    const autosConImgsParseadas = autosDestacados.map(formatearAutoParaRespuesta);
+    const autosConImgsParseadas = autosDestacados.map(a => formatearAutoParaRespuesta(a, { publico: true }));
 
     res.status(200).json({
       status: 200,

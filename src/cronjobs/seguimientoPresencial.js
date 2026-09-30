@@ -33,7 +33,7 @@ async function programarSeguimiento(consulta) {
       const nombre = consultaActual.nombre || null;
       const saludo = nombre ? `Hola ${nombre}!` : "Hola!";
       const vehiculo = consultaActual.vehiculo ? `el ${consultaActual.vehiculo}` : "el vehículo";
-      const mensaje = `${saludo} Nos comunicamos de SportQuatro Automotores. Queríamos saber qué le pareció ${vehiculo} que vio recién en nuestra sucursal y si tiene alguna duda o necesita más información para avanzar en su decisión. Estamos a su disposición, aguardamos su respuesta. Gracias`;
+      const mensaje = `${saludo} Nos comunicamos de Car Place. Queríamos saber qué le pareció ${vehiculo} que vio recién en nuestra sucursal y si tiene alguna duda o necesita más información para avanzar en su decisión. Estamos a su disposición, aguardamos su respuesta. Gracias`;
 
       try {
         await sendWhatsAppTemplate(telefono, "seguimiento_presencial", [

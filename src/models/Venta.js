@@ -79,6 +79,14 @@ module.exports = sequelize => {
         type: DataTypes.JSON,
         allowNull: true,
       },
+      // Datos del auto tal como estaban en Stock al momento de la venta (sin
+      // fotos): { marca, modelo, patente, anio, km, color, motor, transmision,
+      // combustible, traccion, tipo, moneda, precio, precio_oferta,
+      // categorias, notas }. Null en ventas anteriores a este campo.
+      autoDatos: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
       // precioVendido - gastos - precioCompra. Null si no se cargó precio de
       // compra (ej. autos de consignación).
       ganancia: {

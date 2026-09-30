@@ -1,7 +1,8 @@
 // models/Deuda.js
-// Cuenta corriente interna entre los socios (usuarios con rol admin): quién
-// le debe a quién, cuánto y por qué. No tiene relación con Venta/Auto — es
-// puramente interno.
+// Cuenta corriente: quién le debe a quién, cuánto y por qué. Puede ser interna
+// (entre los socios, usuarios con rol admin), de empresa (la empresa con un
+// tercero) o un préstamo de la empresa cargado desde Ventas. Una deuda nunca se
+// borra: solo se salda (total o, en las internas, parcialmente).
 const { DataTypes } = require("sequelize");
 
 module.exports = sequelize => {
@@ -52,6 +53,46 @@ module.exports = sequelize => {
       },
       acreedorTelefono: {
         type: DataTypes.STRING,
+        allowNull: true,
+      },
+      // "interna": ambas puntas son socios. "empresa": una punta es la empresa
+      // o un tercero. "prestamo": la empresa le prestó plata a alguien (ver
+      // createPrestamo.js).
+      tipo: {
+        type: DataTypes.ENUM("interna", "empresa", "prestamo"),
+        allowNull: false,
+        defaultValue: "interna",
+      },
+      // La punta es la empresa misma (no un socio puntual ni un tercero).
+      deudorEmpresa: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      acreedorEmpresa: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      // Cuánto del monto ya se saldó (las deudas internas admiten pagos
+      // parciales). Saldada = montoSaldado >= monto.
+      montoSaldado: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      saldada: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      saldadaEn: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      // [{ fecha, monto, metodo, comentario, porId }] — un item por cada pago.
+      pagos: {
+        type: DataTypes.JSON,
         allowNull: true,
       },
       creadoPorId: {

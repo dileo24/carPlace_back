@@ -931,7 +931,7 @@ async function procesarMensaje(conversacionId, textoEntrante) {
       .join("\n");
 
     const systemPrompt = esperandoConfirmacion
-      ? `Sos el asistente de SportQuatro. Hoy es ${hoy}. El cliente está respondiendo al recordatorio de su visita de hoy.
+      ? `Sos el asistente de Car Place. Hoy es ${hoy}. El cliente está respondiendo al recordatorio de su visita de hoy.
     Datos de la visita: ${eventoHoy.clienteNombre} ${eventoHoy.clienteApellido || ""}${eventoHoy.vehiculo ? ` — interesado en ${eventoHoy.vehiculo}` : ""} — ${eventoHoy.horaInicio} hs.
 
     confirmarVisita y cancelarVisita son EXCLUYENTES: nunca las llames juntas — son
@@ -1028,7 +1028,7 @@ async function procesarMensaje(conversacionId, textoEntrante) {
     Si la respuesta es ambigua → preguntale directamente si va a poder venir hoy.
     Sé muy breve. Una o dos líneas máximo.`
       : esperandoSeguimiento7Dias
-        ? `Sos el asistente de SportQuatro. El cliente está respondiendo al mensaje de
+        ? `Sos el asistente de Car Place. El cliente está respondiendo al mensaje de
     seguimiento que le mandamos porque pasaron 7 días sin actividad en esta conversación
     (le preguntamos si sigue interesado en el vehículo y si ya está en contacto con un
     asesor por otro número de WhatsApp). Tenés que clasificar su respuesta y llamar a
@@ -1038,7 +1038,7 @@ async function procesarMensaje(conversacionId, textoEntrante) {
       cualquier cosa que pueda derivar en una venta o consulta concreta — y NO
       mencionó estar en contacto con otro asesor por otro medio.
     - notificarContactoOtroMedio: si menciona que ya está hablando con alguien de
-      SportQuatro por otro número o medio (aunque también diga que sigue interesado).
+      Car Place por otro número o medio (aunque también diga que sigue interesado).
       Pasá en "detalle" un resumen breve de una línea de lo que dijo.
     - cerrarSeguimientoSinInteres: si dice que ya no le interesa, sin mencionar
       contacto por otro medio.
@@ -1157,7 +1157,7 @@ async function procesarMensaje(conversacionId, textoEntrante) {
       // Si el modelo ya puso un "¡Hola!" suelto (con o sin el emoji) antes de
       // saltear la presentación, lo sacamos para no terminar con dos saludos.
       const textoSinSaludoSuelto = textoWA.replace(/^¡?hola!?\s*(🤖\s*)?/i, "").trim();
-      textoWA = `¡Hola! Soy el asistente virtual de SportQuatro Automotores 🤖. ${textoSinSaludoSuelto}`;
+      textoWA = `¡Hola! Soy el asistente virtual de Car Place 🤖. ${textoSinSaludoSuelto}`;
       console.warn(`⚠️ Bot omitió la presentación inicial en conv ${conversacion.id} — se antepuso automáticamente.`);
     }
 

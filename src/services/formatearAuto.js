@@ -33,6 +33,7 @@ const formatearAutoParaRespuesta = (autoInstance, { publico = false } = {}) => {
     delete autoObj.precio_compra;
     delete autoObj.fecha_compra;
     delete autoObj.propietario;
+    delete autoObj.patente;
   }
 
   return autoObj;

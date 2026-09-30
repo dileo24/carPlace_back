@@ -54,7 +54,7 @@ const enviarRecordatorios = async () => {
       const vehiculo = evento.vehiculo ? ` para ver el ${evento.vehiculo}` : "";
 
       const mensajeLibre =
-        `SPORTQUATRO AUTOMOTORES\n` +
+        `Car Place\n` +
         `Av. Caraffa 2247\n\n` +
         `🙌 Buenos días, ${nombre}!\n\n` +
         `🗓️ Le recordamos su visita${vehiculo} para hoy ${fecha} a las ${hora} hs.\n\n` +
@@ -187,7 +187,7 @@ const enviarRecordatorios = async () => {
         try {
           await sendWhatsAppMessage(
             adminTelefono,
-            `SportQuatro CRM — Agenda del día\n\nTenés ${eventos.length} evento(s) programado(s) para hoy:\n\n${resumen}\n\n¡Buen día!`,
+            `Car Place CRM — Agenda del día\n\nTenés ${eventos.length} evento(s) programado(s) para hoy:\n\n${resumen}\n\n¡Buen día!`,
           );
         } catch (err2) {
           console.error("❌ Error enviando resumen al admin:", err2.message);

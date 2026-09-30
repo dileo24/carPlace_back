@@ -195,7 +195,7 @@ async function interpretarIntencion(transcripcion, intencionPrevia = null, lista
     ? `\nMODELOS EN STOCK (para referencia): ${listaModelos.join(", ")}.\nLa transcripción viene de un audio y puede tener errores fonéticos. Si el texto menciona algo que suena parecido a uno de estos modelos (por ejemplo "foto 4K" en vez de "Ford Ka"), asumí que el admin dijo el modelo real de la lista y usalo correctamente en tu respuesta, en vez de tomar la transcripción literal.\n`
     : "";
 
-  const systemPrompt = `Sos el asistente interno del CRM de SportQuatro, concesionaria de autos en Córdoba Argentina.
+  const systemPrompt = `Sos el asistente interno del CRM de Car Place, concesionaria de autos en Córdoba Argentina.
 Hoy es: ${hoy}
 ${contextoCorrecion}${contextoStock}
 Analizá la transcripción de voz del admin y devolvé UN objeto JSON con la acción a ejecutar.

@@ -1,6 +1,5 @@
 // middlewares/crm/getReportes.js
-const { Consulta, Venta, Tarea, Auto, Conversacion } = require("../../db");
-const { Op } = require("sequelize");
+const { Consulta, Venta, Auto, Conversacion } = require("../../db");
 
 const MESES_LABELS = [
   "Ene",
@@ -53,20 +52,86 @@ function pct(de, a) {
   return Math.round((a / de) * 100);
 }
 
-function startOfMonth(year, month) {
-  return new Date(year, month, 1);
+// ── Períodos (semana / mes) en hora Argentina (UTC-3, sin DST) ───────────────
+// Se trabaja en "milisegundos AR": timestamp real - 3h, leído con getters UTC.
+// fechaVenta es DATEONLY (YYYY-MM-DD): ya es una fecha de calendario, no se corre.
+const AR_OFFSET_MS = 3 * 3600000;
+const DIA_MS = 86400000;
+const PERIODOS = ["semana", "mes"];
+const SEMANAS_SERIE = 8;
+const MESES_SERIE = 6;
+
+const msAR = fecha => new Date(fecha).getTime() - AR_OFFSET_MS;
+const msFechaVenta = fecha => new Date(fecha).getTime();
+
+function ahoraAR() {
+  return new Date(Date.now() - AR_OFFSET_MS);
+}
+
+function parsePeriodo(valor) {
+  return PERIODOS.includes(valor) ? valor : "mes";
+}
+
+// Arma los buckets [inicio, fin) de la serie, del más viejo al más nuevo; el
+// último es el período en curso. "ytd" (solo mes) arranca en enero del año actual.
+function buildBuckets(periodo, { ytd = false } = {}) {
+  const hoy = ahoraAR();
+  const y = hoy.getUTCFullYear();
+  const m = hoy.getUTCMonth();
+  const d = hoy.getUTCDate();
+  const buckets = [];
+  if (periodo === "semana") {
+    const lunes = d - ((hoy.getUTCDay() + 6) % 7);
+    for (let i = SEMANAS_SERIE - 1; i >= 0; i--) {
+      const inicio = Date.UTC(y, m, lunes - i * 7);
+      const ini = new Date(inicio);
+      buckets.push({
+        label: `${ini.getUTCDate()}/${ini.getUTCMonth() + 1}`,
+        inicio,
+        fin: inicio + 7 * DIA_MS,
+      });
+    }
+  } else {
+    const cantidad = ytd ? m + 1 : MESES_SERIE;
+    for (let i = cantidad - 1; i >= 0; i--) {
+      const ini = new Date(Date.UTC(y, m - i, 1));
+      buckets.push({
+        label: MESES_LABELS[ini.getUTCMonth()],
+        inicio: ini.getTime(),
+        fin: Date.UTC(ini.getUTCFullYear(), ini.getUTCMonth() + 1, 1),
+      });
+    }
+  }
+  return buckets;
+}
+
+// Elementos cuyo instante (ms AR, vía getMs) cae dentro del bucket.
+const enBucket = (items, getMs, b) =>
+  items.filter(it => {
+    const t = getMs(it);
+    return t >= b.inicio && t < b.fin;
+  });
+
+// Proyección lineal del período en curso: (acumulado / días transcurridos) * días totales.
+function proyectar(periodo, unidades) {
+  const hoy = ahoraAR();
+  if (periodo === "semana") {
+    const diaDeSemana = ((hoy.getUTCDay() + 6) % 7) + 1; // lunes = 1
+    return Math.round((unidades / diaDeSemana) * 7);
+  }
+  const diasEnMes = new Date(
+    Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  return Math.round((unidades / hoy.getUTCDate()) * diasEnMes);
 }
 
 const getReportes = async (req, res) => {
   try {
-    const now = new Date();
-    const anioActual = now.getFullYear();
-    const mesActual = now.getMonth(); // 0-indexed
+    const periodo = parsePeriodo(req.query?.periodo);
     const rol = req.user?.rol || "";
-    const userId = req.user?.id ?? null;
 
     // ── Traer datos base ──────────────────────────────────────────────────────
-    const [todasConsultas, todasVentasSinFiltrar, todasTareasSinFiltrar, todosAutosSinFiltrar, todasConversaciones] =
+    const [todasConsultas, todasVentasSinFiltrar, todosAutosSinFiltrar, todasConversaciones] =
       await Promise.all([
         Consulta.findAll({
           attributes: [
@@ -82,19 +147,8 @@ const getReportes = async (req, res) => {
           order: [["createdAt", "ASC"]],
         }),
         Venta.findAll({ order: [["fechaVenta", "DESC"]] }),
-        Tarea.findAll(),
         Auto.findAll({
-          attributes: [
-            "id",
-            "marca",
-            "modelo",
-            "anio",
-            "precio",
-            "fecha_recepcion",
-            "estado",
-            "tipo",
-            "propietario",
-          ],
+          attributes: ["id", "marca", "modelo", "anio", "fecha_recepcion", "estado", "propietario"],
         }),
         Conversacion.findAll({
           attributes: ["id", "estado", "canal", "createdAt"],
@@ -103,26 +157,23 @@ const getReportes = async (req, res) => {
       ]);
 
     // ── Alcance por rol ────────────────────────────────────────────────────────
-    // El socio solo puede ver sus propios autos/ventas (o los compartidos) y
-    // sus propias tareas; el resto del equipo (cualquier rol que no sea admin
-    // ni socio) directamente no ve nada del socio, ni siquiera agregado.
+    // El socio solo puede ver sus propios autos/ventas (o los compartidos); el
+    // resto del equipo (cualquier rol que no sea admin ni socio) directamente
+    // no ve nada del socio, ni siquiera agregado.
     const esDelSocio = propietario => propietario === "socio" || propietario === "compartido";
     let todosAutos = todosAutosSinFiltrar;
     let todasVentas = todasVentasSinFiltrar;
-    let todasTareas = todasTareasSinFiltrar;
 
     if (rol === "socio") {
       todosAutos = todosAutosSinFiltrar.filter(a => esDelSocio(a.propietario));
       todasVentas = todasVentasSinFiltrar.filter(v => esDelSocio(v.propietarioAuto));
-      todasTareas = todasTareasSinFiltrar.filter(t => t.creadoPorId === userId);
     } else if (rol !== "admin") {
       todosAutos = todosAutosSinFiltrar.filter(a => !esDelSocio(a.propietario));
       todasVentas = todasVentasSinFiltrar.filter(v => !esDelSocio(v.propietarioAuto));
     }
 
-    // Peso de cada auto/venta compartida al 50% (solo desde la óptica del
-    // socio — la agencia/admin ve el valor total del negocio sin prorratear).
-    const pesoAuto = a => (rol === "socio" && a.propietario === "compartido" ? 0.5 : 1);
+    // Peso de cada venta compartida al 50% (solo desde la óptica del socio —
+    // la agencia/admin ve el valor total del negocio sin prorratear).
     const pesoVenta = v => (rol === "socio" && v.propietarioAuto === "compartido" ? 0.5 : 1);
 
     // Filtrar ventas con fecha válida (ignorar 1900)
@@ -131,7 +182,7 @@ const getReportes = async (req, res) => {
       return f.getFullYear() > 1990;
     });
 
-    // ── 1. EMBUDO DE CONVERSIÓN ───────────────────────────────────────────────
+    // ── 1. EMBUDO DE CONVERSIÓN (acumulado) ───────────────────────────────────
     const estadosEmbudo = ["nuevo", "con_oferta", "seguimiento", "cerrado", "perdido"];
     const coloresEmbudo = {
       nuevo: "#3b82f6",
@@ -195,109 +246,32 @@ const getReportes = async (req, res) => {
       { key: "seguimiento", label: "Seguimiento → Cierre", dias: diasPorEtapa },
     ];
 
-    // ── 2. VENTAS POR MES (año actual) ────────────────────────────────────────
-    const ventasPorMesAnioActual = [];
-    for (let m = 0; m <= mesActual; m++) {
-      const inicio = startOfMonth(anioActual, m);
-      const fin = startOfMonth(anioActual, m + 1);
-      const count = ventasValidas.filter(v => {
-        const f = new Date(v.fechaVenta);
-        return f >= inicio && f < fin;
-      }).length;
-      ventasPorMesAnioActual.push({
-        mes: MESES_LABELS[m],
-        mesNum: m + 1,
-        anio: anioActual,
-        unidades: count,
-      });
-    }
+    // ── 2. VENTAS POR PERÍODO ─────────────────────────────────────────────────
+    // Mes: año en curso (enero → hoy). Semana: últimas 8 semanas.
+    const ventasHistoricas = buildBuckets(periodo, { ytd: true }).map(b => ({
+      label: b.label,
+      unidades: enBucket(ventasValidas, v => msFechaVenta(v.fechaVenta), b).length,
+    }));
+    const periodoActual = ventasHistoricas[ventasHistoricas.length - 1];
+    const periodoAnterior = ventasHistoricas[ventasHistoricas.length - 2] ?? { unidades: 0 };
+    const proyeccion = proyectar(periodo, periodoActual.unidades);
 
-    const mesActualData = ventasPorMesAnioActual[ventasPorMesAnioActual.length - 1];
-    const mesAnteriorData = ventasPorMesAnioActual[ventasPorMesAnioActual.length - 2] ?? {
-      unidades: 0,
-    };
-    const diasEnMes = new Date(anioActual, mesActual + 1, 0).getDate();
-    const diaActual = now.getDate();
-    const proyeccion =
-      diaActual > 0 ? Math.round((mesActualData.unidades / diaActual) * diasEnMes) : 0;
-
-    // ── 3. VENTAS HISTÓRICAS (años anteriores) ────────────────────────────────
-    const aniosDisponibles = [2023, 2024, 2025, anioActual];
-    const patrimonioHistorico = {};
-
-    for (const anio of aniosDisponibles) {
-      const mesesDelAnio = anio === anioActual ? mesActual + 1 : 12;
-      const ventasMensuales = [];
-      for (let m = 0; m < mesesDelAnio; m++) {
-        const inicio = startOfMonth(anio, m);
-        const fin = startOfMonth(anio, m + 1);
-        const count = ventasValidas.filter(v => {
-          const f = new Date(v.fechaVenta);
-          return f >= inicio && f < fin;
-        }).length;
-        ventasMensuales.push({ mes: MESES_LABELS[m], vendidos: count });
-      }
-      patrimonioHistorico[anio] = { ventasMensuales };
-    }
-
-    // Stock actual para patrimonio (año actual)
-    const parsePrecio = str => {
-      if (!str) return 0;
-      return parseInt(String(str).replace(/\./g, "").replace(/,/g, ""), 10) || 0;
-    };
-
-    const autosActivos = todosAutos;
-    const totalUnidades = autosActivos.length;
-    const totalBruto = autosActivos.reduce((s, a) => s + parsePrecio(a.precio) * pesoAuto(a), 0);
-    const unidadesPatrimonio = autosActivos.filter(a => a.tipo === "patrimonio").length;
-    const unidadesConsignacion = autosActivos.filter(
-      a => a.tipo === "consignacion" || a.tipo === "consignacion_online",
-    ).length;
-    const unidadesGeneral = totalUnidades - unidadesPatrimonio - unidadesConsignacion;
-    const valorPatrimonio = Math.round(
-      autosActivos
-        .filter(a => a.tipo === "patrimonio")
-        .reduce((s, a) => s + parsePrecio(a.precio) * pesoAuto(a), 0) / 1_000_000,
-    );
-    const valorConsignacion = Math.round(
-      autosActivos
-        .filter(a => a.tipo === "consignacion" || a.tipo === "consignacion_online")
-        .reduce((s, a) => s + parsePrecio(a.precio) * pesoAuto(a), 0) / 1_000_000,
-    );
-    const valorGeneral = Math.round(
-      autosActivos.filter(a => !a.tipo).reduce((s, a) => s + parsePrecio(a.precio) * pesoAuto(a), 0) / 1_000_000,
-    );
-
-    patrimonioHistorico[anioActual].stockActual = {
-      patrimonio: { unidades: unidadesPatrimonio, valorM: valorPatrimonio },
-      consignacion: { unidades: unidadesConsignacion, valorM: valorConsignacion },
-      sinClasificar: { unidades: unidadesGeneral, valorM: valorGeneral },
-    };
-
-    // ── 3b. GANANCIA ──────────────────────────────────────────────────────────
+    // ── 3. GANANCIA ───────────────────────────────────────────────────────────
     // Solo existe para ventas con precio de compra cargado (venta.ganancia no
     // es null) — autos de consignación u otros sin precio de compra no suman acá.
     const ventasConGanancia = ventasValidas.filter(v => v.ganancia != null);
-    const gananciaTotal = Math.round(
-      ventasConGanancia.reduce((s, v) => s + v.ganancia * pesoVenta(v), 0),
-    );
-    const gananciaPorMes = [];
-    for (let i = 5; i >= 0; i--) {
-      const fecha = new Date(anioActual, mesActual - i, 1);
-      const inicio = startOfMonth(fecha.getFullYear(), fecha.getMonth());
-      const fin = startOfMonth(fecha.getFullYear(), fecha.getMonth() + 1);
-      const ventasMes = ventasConGanancia.filter(v => {
-        const f = new Date(v.fechaVenta);
-        return f >= inicio && f < fin;
-      });
-      gananciaPorMes.push({
-        mes: MESES_LABELS[fecha.getMonth()],
-        total: Math.round(ventasMes.reduce((s, v) => s + v.ganancia * pesoVenta(v), 0)),
-      });
-    }
+    const gananciaSerie = buildBuckets(periodo).map(b => ({
+      label: b.label,
+      total: Math.round(
+        enBucket(ventasConGanancia, v => msFechaVenta(v.fechaVenta), b).reduce(
+          (s, v) => s + v.ganancia * pesoVenta(v),
+          0,
+        ),
+      ),
+    }));
+    const gananciaTotal = gananciaSerie.reduce((s, g) => s + g.total, 0);
 
-    // ── 4. PERFORMANCE POR ASESOR ─────────────────────────────────────────────
-    // Agrupar consultas por asesor
+    // ── 4. PERFORMANCE POR ASESOR (acumulado) ─────────────────────────────────
     const asesoresMap = {};
     todasConsultas.forEach(c => {
       if (!c.asesorNombre) return;
@@ -313,7 +287,6 @@ const getReportes = async (req, res) => {
       if (c.estado === "cerrado") asesoresMap[key].ventasCerradas++;
     });
 
-    // Intentar cruzar con ventas por nombre de asesor (aproximación)
     // Las ventas no tienen asesorId, así que el conteo de ventasCerradas viene de consultas cerradas
     const ventasPorAsesor = Object.values(asesoresMap)
       .map((a, i) => ({
@@ -326,41 +299,31 @@ const getReportes = async (req, res) => {
       .sort((a, b) => b.ventasCerradas - a.ventasCerradas);
 
     // ── 5. ORIGEN DE CONSULTAS ────────────────────────────────────────────────
-    // Por mes (últimos 6 meses)
-    const origenPorMes = [];
-    for (let i = 5; i >= 0; i--) {
-      const fecha = new Date(anioActual, mesActual - i, 1);
-      const inicio = startOfMonth(fecha.getFullYear(), fecha.getMonth());
-      const fin = startOfMonth(fecha.getFullYear(), fecha.getMonth() + 1);
-      const row = { mes: MESES_LABELS[fecha.getMonth()] };
-      const consultasMes = todasConsultas.filter(c => {
-        const f = new Date(c.createdAt);
-        return f >= inicio && f < fin;
-      });
+    const origenSerie = buildBuckets(periodo).map(b => {
+      const consultasPeriodo = enBucket(todasConsultas, c => msAR(c.createdAt), b);
+      const row = { label: b.label };
       Object.keys(COLORES_ORIGEN).forEach(origen => {
-        row[origen] = consultasMes.filter(c => c.origen === origen).length;
+        row[origen] = consultasPeriodo.filter(c => c.origen === origen).length;
       });
-      origenPorMes.push(row);
-    }
+      return row;
+    });
 
-    // Conversión por canal
+    // Conversión por canal (acumulado)
     const conversionPorCanal = Object.entries(COLORES_ORIGEN)
       .map(([canal, color]) => {
         const total = todasConsultas.filter(c => c.origen === canal).length;
         const cerrad = todasConsultas.filter(
           c => c.origen === canal && c.estado === "cerrado",
         ).length;
-        return { canal, tasa: pct(total, cerrad), color: CONVERSION_COLORS[canal] || color };
+        return { canal, total, tasa: pct(total, cerrad), color: CONVERSION_COLORS[canal] || color };
       })
-      .filter(c => {
-        const total = todasConsultas.filter(x => x.origen === c.canal).length;
-        return total > 0;
-      })
+      .filter(c => c.total > 0)
+      .map(({ canal, tasa, color }) => ({ canal, tasa, color }))
       .sort((a, b) => b.tasa - a.tasa);
 
     // ── 6. STOCK E INVENTARIO ─────────────────────────────────────────────────
     // Stock items — usar fecha_recepcion en vez de createdAt
-    const stockItems = autosActivos
+    const stockItems = todosAutos
       .filter(a => a.estado !== "vendido" && a.estado !== "no_disponible")
       .map(a => ({
         marca: a.marca ? a.marca.charAt(0).toUpperCase() + a.marca.slice(1) : "—",
@@ -375,8 +338,8 @@ const getReportes = async (req, res) => {
       .sort((a, b) => b.dias - a.dias)
       .slice(0, 20);
     const stockResumen = {
-      disp: autosActivos.filter(a => a.estado === "disponible").length,
-      sen: autosActivos.filter(a => a.estado === "senado").length,
+      disp: todosAutos.filter(a => a.estado === "disponible").length,
+      sen: todosAutos.filter(a => a.estado === "senado").length,
       criticos: stockItems.filter(s => s.critico).length,
       promDias: stockItems.length
         ? Math.round(stockItems.reduce((s, a) => s + a.dias, 0) / stockItems.length)
@@ -386,115 +349,63 @@ const getReportes = async (req, res) => {
     // ── 7. TOMA DE USADOS ─────────────────────────────────────────────────────
     const ventasConUsado = ventasValidas.filter(v => v.autoRecibido && v.recibioPago);
     const totalVentasValidas = ventasValidas.length;
+    const usadosSerie = buildBuckets(periodo).map(b => ({
+      label: b.label,
+      cantidad: enBucket(ventasConUsado, v => msFechaVenta(v.fechaVenta), b).length,
+    }));
 
-    // Extraer marca del string de autoRecibido (primera palabra capitalizada)
-    function extraerMarca(str) {
-      if (!str) return "Otro";
-      const palabra = str.trim().split(/\s+/)[0];
-      return palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase();
-    }
-
-    const marcasCount = {};
-    ventasConUsado.forEach(v => {
-      const marca = extraerMarca(v.autoRecibido);
-      marcasCount[marca] = (marcasCount[marca] || 0) + 1;
-    });
-
-    const usadosPorMarca = Object.entries(marcasCount)
-      .map(([key, count]) => ({ key, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6);
-
-    // Por mes (últimos 6 meses)
-    const usadosPorMes = [];
-    for (let i = 5; i >= 0; i--) {
-      const fecha = new Date(anioActual, mesActual - i, 1);
-      const inicio = startOfMonth(fecha.getFullYear(), fecha.getMonth());
-      const fin = startOfMonth(fecha.getFullYear(), fecha.getMonth() + 1);
-      const count = ventasConUsado.filter(v => {
-        const f = new Date(v.fechaVenta);
-        return f >= inicio && f < fin;
-      }).length;
-      usadosPorMes.push({ mes: MESES_LABELS[fecha.getMonth()], cantidad: count });
-    }
-
-    // ── 8. TAREAS ─────────────────────────────────────────────────────────────
-    const tareasVivas = todasTareas.filter(t => t.estado !== "cancelada");
-    const completadas = tareasVivas.filter(t => t.estado === "completada").length;
-    const pendientes = tareasVivas.filter(t => t.estado === "pendiente").length;
-    const enProgreso = tareasVivas.filter(t => t.estado === "en_progreso").length;
-
-    // Por asesor — las tareas no tienen asesorId, agrupamos por creadoPor
-    // Como no hay nombre de asesor en tareas, devolvemos resumen global
-    const tareasPorAsesor = [{ nombre: "Equipo", completadas, pendientes, vencidas: 0 }];
-
-    // ── 9. BOT ────────────────────────────────────────────────────────────────
-    const botPorMes = [];
-    for (let i = 5; i >= 0; i--) {
-      const fecha = new Date(anioActual, mesActual - i, 1);
-      const inicio = startOfMonth(fecha.getFullYear(), fecha.getMonth());
-      const fin = startOfMonth(fecha.getFullYear(), fecha.getMonth() + 1);
-      const convsMes = todasConversaciones.filter(c => {
-        const f = new Date(c.createdAt);
-        return f >= inicio && f < fin;
-      });
-      const iniciadas = convsMes.length;
-      const derivadas = convsMes.filter(
+    // ── 8. BOT ────────────────────────────────────────────────────────────────
+    const botSerie = buildBuckets(periodo).map(b => {
+      const convsPeriodo = enBucket(todasConversaciones, c => msAR(c.createdAt), b);
+      const iniciadas = convsPeriodo.length;
+      const derivadas = convsPeriodo.filter(
         c => c.estado === "asesor" || c.estado === "cerrada",
       ).length;
-      const abandonadas = iniciadas - derivadas;
-      botPorMes.push({
-        mes: MESES_LABELS[fecha.getMonth()],
+      return {
+        label: b.label,
         iniciadas,
         derivadas,
-        abandonadas: Math.max(0, abandonadas),
+        abandonadas: Math.max(0, iniciadas - derivadas),
         tiempoDerivacionHs: 0,
-      });
-    }
-
-    const botActual = botPorMes[botPorMes.length - 1];
+      };
+    });
+    const botActual = botSerie[botSerie.length - 1];
 
     const respuesta = {
-      // 1. Embudo
+      periodo,
+
+      // 1. Embudo (acumulado)
       embudoEtapas,
       tiempoPorEtapa,
 
       // 2. Ventas
-      ventasHistoricas: ventasPorMesAnioActual,
-      proyeccionMesActual: proyeccion,
-      mesActual: mesActualData,
-      mesAnterior: mesAnteriorData,
+      ventasHistoricas,
+      proyeccion,
+      periodoActual,
+      periodoAnterior,
 
-      // 3. Patrimonio histórico
-      patrimonioHistorico,
-
-      // 3b. Ganancia
+      // 3. Ganancia
       gananciaTotal,
-      gananciaPorMes,
+      gananciaSerie,
 
-      // 4. Performance asesor
+      // 4. Performance asesor (acumulado)
       ventasPorAsesor,
 
       // 5. Origen
-      origenPorMes,
+      origenSerie,
       conversionPorCanal,
 
-      // 6. Stock
+      // 6. Stock (actual)
       stockItems,
       stockResumen,
 
       // 7. Usados
       ventasConUsadoCount: ventasConUsado.length,
       totalVentasValidas,
-      usadosPorMarca,
-      usadosPorMes,
+      usadosSerie,
 
-      // 8. Tareas
-      tareas: { total: tareasVivas.length, completadas, pendientes, enProgreso },
-      tareasPorAsesor,
-
-      // 9. Bot
-      botMetricasHistorico: botPorMes,
+      // 8. Bot
+      botSerie,
       botActual,
     };
 
@@ -504,9 +415,9 @@ const getReportes = async (req, res) => {
       delete respuesta.embudoEtapas;
       delete respuesta.tiempoPorEtapa;
       delete respuesta.ventasPorAsesor;
-      delete respuesta.origenPorMes;
+      delete respuesta.origenSerie;
       delete respuesta.conversionPorCanal;
-      delete respuesta.botMetricasHistorico;
+      delete respuesta.botSerie;
       delete respuesta.botActual;
     }
 

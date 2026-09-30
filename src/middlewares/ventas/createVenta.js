@@ -1,10 +1,70 @@
-const { Venta, Auto, AutoTareaAlistaje, conn } = require("../../db");
+const { Venta, Auto, AutoTareaAlistaje, Categoria, Deuda, conn } = require("../../db");
+const hoyArgentina = require("../../services/hoyArgentina");
+const { NOMBRE_EMPRESA, formatoMonto, notificarMovimiento } = require("../../services/cuentasHelper");
 const { deleteFromCloudinary, publicIdFromCloudinaryUrl } = require("../../services/cloudinaryService");
 const { eliminarPublicacionesDeAuto } = require("../../services/mercadolibreListingsService");
 
+// Datos del auto (sin fotos) tal como están en Stock al momento de la venta.
+const snapshotDeAuto = auto => ({
+  marca: auto.marca,
+  modelo: auto.modelo,
+  patente: auto.patente ?? null,
+  anio: auto.anio,
+  km: auto.km,
+  color: auto.color ?? null,
+  motor: auto.motor,
+  transmision: auto.transmision,
+  combustible: auto.combustible,
+  traccion: auto.traccion ?? null,
+  tipo: auto.tipo ?? null,
+  moneda: auto.moneda,
+  precio: auto.precio,
+  precio_oferta: auto.precio_oferta ?? null,
+  categorias: (auto.categorias || []).map(c => c.categ),
+  notas: auto.notas ?? null,
+});
+
+// Un préstamo cargado desde Ventas NO es una venta (no crea Venta ni toca el
+// stock): registra en Cuentas una deuda de tipo "prestamo" donde la persona le
+// debe el monto a la empresa.
+const crearPrestamo = async (req, res) => {
+  if (req.user?.rol !== "admin") {
+    return res.status(403).json({ status: "403", resp: "Solo un admin puede registrar préstamos." });
+  }
+  const { vehiculoVendido, fechaVenta, nombre, apellido, telefono, precioVendido, moneda } = req.body;
+
+  if (!nombre?.trim()) return res.status(400).json({ status: "400", resp: "nombre es requerido." });
+  if (!apellido?.trim()) return res.status(400).json({ status: "400", resp: "apellido es requerido." });
+  if (!telefono?.trim()) return res.status(400).json({ status: "400", resp: "telefono es requerido." });
+  const monto = parseInt(String(precioVendido ?? "").replace(/\./g, ""), 10);
+  if (!Number.isFinite(monto) || monto <= 0) {
+    return res.status(400).json({ status: "400", resp: "El monto prestado debe ser mayor a 0." });
+  }
+
+  const deuda = await Deuda.create({
+    monto,
+    moneda: moneda === "USD" ? "USD" : "ARS",
+    motivo: vehiculoVendido?.trim() || "Préstamo",
+    tipo: "prestamo",
+    acreedorEmpresa: true,
+    deudorNombre: `${nombre.trim()} ${apellido.trim()}`,
+    deudorTelefono: telefono.trim(),
+    creadoPorId: req.user?.id ?? null,
+    fecha: fechaVenta || hoyArgentina(),
+  });
+
+  notificarMovimiento(
+    `💸 Nuevo préstamo de ${NOMBRE_EMPRESA}\n${deuda.deudorNombre} le debe ${deuda.moneda} ${formatoMonto(deuda.monto)} a ${NOMBRE_EMPRESA}\nMotivo: ${deuda.motivo}`,
+  );
+
+  return res.status(201).json({ status: 201, resp: deuda, prestamo: true });
+};
+
 const createVenta = async (req, res) => {
   try {
-    const { vehiculoVendido, fechaVenta, nombre, apellido, telefono, recibioPago, autoRecibido, precioVendido, moneda, autoId } = req.body;
+    const { vehiculoVendido, fechaVenta, nombre, apellido, telefono, recibioPago, autoRecibido, precioVendido, moneda, autoId, esPrestamo } = req.body;
+
+    if (esPrestamo) return await crearPrestamo(req, res);
 
     if (!vehiculoVendido?.trim()) return res.status(400).json({ status: "400", resp: "vehiculoVendido es requerido." });
     if (!fechaVenta)              return res.status(400).json({ status: "400", resp: "fechaVenta es requerido." });
@@ -17,10 +77,13 @@ const createVenta = async (req, res) => {
     // Snapshot de compra/gastos/ganancia — el Auto se destruye más abajo en
     // la misma transacción, así que estos datos hay que copiarlos a la Venta
     // ahora o se pierden para siempre.
-    let datosPatrimonio = { propietarioAuto: "agencia", fechaCompra: null, precioCompra: null, gastos: null, gastosDetalle: null, ganancia: null };
+    let datosPatrimonio = { propietarioAuto: "agencia", fechaCompra: null, precioCompra: null, gastos: null, gastosDetalle: null, ganancia: null, autoDatos: null };
     if (autoId) {
       auto = await Auto.findByPk(autoId, {
-        include: [{ model: AutoTareaAlistaje, as: "tareasAlistaje" }],
+        include: [
+          { model: AutoTareaAlistaje, as: "tareasAlistaje" },
+          { model: Categoria, as: "categorias", through: { attributes: [] } },
+        ],
       });
       if (!auto) return res.status(404).json({ status: "404", resp: "El vehículo seleccionado del catálogo ya no existe." });
 
@@ -40,6 +103,7 @@ const createVenta = async (req, res) => {
         gastos,
         gastosDetalle,
         ganancia,
+        autoDatos: snapshotDeAuto(auto),
       };
 
       // Si el auto tiene una publicación activa/pausada en MercadoLibre, se

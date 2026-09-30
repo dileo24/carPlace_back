@@ -20,7 +20,7 @@ async function generarMensajeReactivacion(conversacion) {
     ? `Contexto de la consulta previa: ${conversacion.resumenIA}`
     : "El cliente tuvo una consulta previa pero no hay resumen disponible.";
 
-  const prompt = `Sos el asistente de SportQuatro, una concesionaria de autos en Córdoba, Argentina.
+  const prompt = `Sos el asistente de Car Place, una concesionaria de autos en Córdoba, Argentina.
 Tenés que escribir un mensaje de WhatsApp para retomar contacto con un cliente inactivo.
 
 ${contexto}
@@ -28,7 +28,7 @@ ${contexto}
 REGLAS ESTRICTAS:
 - Empezá con "${saludo},"
 - Una sola oración preguntando si sigue interesado o si quedó alguna duda pendiente, adaptada al contexto de la consulta
-- No firmes, no pongas "SportQuatro" al final, no pongas "saludos", no agregues nada más
+- No firmes, no pongas "Car Place" al final, no pongas "saludos", no agregues nada más
 - Usá "usted" siempre
 - Sin markdown, solo texto plano
 - Máximo 2 líneas en total
@@ -38,9 +38,9 @@ EJEMPLOS DE FORMATO CORRECTO:
 "Hola, queríamos saber si pudo avanzar con la decisión sobre el vehículo que consultó."
 
 EJEMPLOS INCORRECTOS (no hacer):
-"Hola Juan, espero que esté bien. Saludos, SportQuatro."
-"Hola, desde SportQuatro le escribimos para..."
-"Estimado cliente, nos comunicamos desde SportQuatro Automotores..."
+"Hola Juan, espero que esté bien. Saludos, Car Place."
+"Hola, desde Car Place le escribimos para..."
+"Estimado cliente, nos comunicamos desde Car Place..."
 
 Escribí solo el mensaje, sin comillas, sin explicaciones.`;
 
@@ -52,7 +52,7 @@ Escribí solo el mensaje, sin comillas, sin explicaciones.`;
 
   const mensaje = response.choices[0].message.content?.trim();
 
-  if (!mensaje || mensaje.length > 200 || mensaje.toLowerCase().includes("sportquatro")) {
+  if (!mensaje || mensaje.length > 200 || mensaje.toLowerCase().includes("car place")) {
     const fallback = nombre
       ? `Hola ${nombre}, queríamos saber si sigue interesado en el vehículo que consultó o si le quedó alguna duda pendiente.`
       : `Hola, queríamos saber si sigue interesado en el vehículo que consultó o si le quedó alguna duda pendiente.`;

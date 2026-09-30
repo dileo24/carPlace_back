@@ -28,7 +28,7 @@ const getAutosByCategoria = async (req, res) => {
       return res.status(404).json({ error: "No se encontraron autos en estas categorías." });
     }
 
-    const autosConImgsParseadas = autos.map(formatearAutoParaRespuesta);
+    const autosConImgsParseadas = autos.map(a => formatearAutoParaRespuesta(a, { publico: true }));
 
     res.status(200).json({
       status: 200,

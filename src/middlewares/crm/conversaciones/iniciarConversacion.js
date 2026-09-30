@@ -108,7 +108,7 @@ const iniciarConversacion = async (req, res) => {
     }
 
     const waMsgId = waResp?.messages?.[0]?.id || null;
-    const textoMensaje = `Hola ${nombreCliente}! Nos comunicamos de SportQuatro Automotores respecto a su consulta sobre ${tituloConsulta}. Quedamos a su disposición para cualquier información adicional que necesite.`;
+    const textoMensaje = `Hola ${nombreCliente}! Nos comunicamos de Car Place respecto a su consulta sobre ${tituloConsulta}. Quedamos a su disposición para cualquier información adicional que necesite.`;
 
     const conv = await Conversacion.create({
       telefono,

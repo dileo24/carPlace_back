@@ -1,0 +1,147 @@
+[
+  {
+    "nombre": "Audi",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771409/general/whh4i1k01tjareuyhyiz.webp",
+    "fotoPublicId": "whh4i1k01tjareuyhyiz"
+  },
+  {
+    "nombre": "Baic",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771409/general/btcqebtwhkrwh4iw4yav.webp",
+    "fotoPublicId": "btcqebtwhkrwh4iw4yav"
+  },
+  {
+    "nombre": "Benelli",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771411/general/bvraadyucvhiiofbtj1g.webp",
+    "fotoPublicId": "bvraadyucvhiiofbtj1g"
+  },
+  {
+    "nombre": "BMW",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771412/general/rmb0kb8jx9as1y86pv9b.webp",
+    "fotoPublicId": "rmb0kb8jx9as1y86pv9b"
+  },
+  {
+    "nombre": "Chery",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771413/general/iieo9kxnggqyna4ew94d.webp",
+    "fotoPublicId": "iieo9kxnggqyna4ew94d"
+  },
+  {
+    "nombre": "Chevrolet",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771414/general/l6vuyeggvpehs3gqwn1j.webp",
+    "fotoPublicId": "l6vuyeggvpehs3gqwn1j"
+  },
+  {
+    "nombre": "Citroën",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771415/general/c9qkf9nsqqpdn75oma7w.webp",
+    "fotoPublicId": "c9qkf9nsqqpdn75oma7w"
+  },
+  {
+    "nombre": "DFSK",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771416/general/fmozmfhlggny9jbjncpz.webp",
+    "fotoPublicId": "fmozmfhlggny9jbjncpz"
+  },
+  {
+    "nombre": "Dodge",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771417/general/nwyvyquitd1ckrt9lcwo.webp",
+    "fotoPublicId": "nwyvyquitd1ckrt9lcwo"
+  },
+  {
+    "nombre": "DS",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771418/general/t7od4qevgn62mg93nk09.webp",
+    "fotoPublicId": "t7od4qevgn62mg93nk09"
+  },
+  {
+    "nombre": "Fiat",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771420/general/njsbq6ytfukjy7cmxqks.webp",
+    "fotoPublicId": "njsbq6ytfukjy7cmxqks"
+  },
+  {
+    "nombre": "Ford",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771420/general/txr114l2ymchbnx9ibcg.webp",
+    "fotoPublicId": "txr114l2ymchbnx9ibcg"
+  },
+  {
+    "nombre": "Honda",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771421/general/xu9zhgtxsfolspqovel8.webp",
+    "fotoPublicId": "xu9zhgtxsfolspqovel8"
+  },
+  {
+    "nombre": "Hyundai",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771423/general/rtz7p6y32joa89fxfazt.webp",
+    "fotoPublicId": "rtz7p6y32joa89fxfazt"
+  },
+  {
+    "nombre": "Jeep",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771423/general/g76g5blznzhiky4k6fou.webp",
+    "fotoPublicId": "g76g5blznzhiky4k6fou"
+  },
+  {
+    "nombre": "JETOUR",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771424/general/s2gzwcffhaoj0trp5hjp.webp",
+    "fotoPublicId": "s2gzwcffhaoj0trp5hjp"
+  },
+  {
+    "nombre": "Kawasaki",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771425/general/hfz0daamueaj1btk6jum.webp",
+    "fotoPublicId": "hfz0daamueaj1btk6jum"
+  },
+  {
+    "nombre": "Kia",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771426/general/qq1u9wozldy7wxqk4igs.webp",
+    "fotoPublicId": "qq1u9wozldy7wxqk4igs"
+  },
+  {
+    "nombre": "KTM",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771427/general/u2shy4i2lju6o1jthssy.webp",
+    "fotoPublicId": "u2shy4i2lju6o1jthssy"
+  },
+  {
+    "nombre": "Mercedes-Benz",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771428/general/rwzlonbvqhodo0eqts34.webp",
+    "fotoPublicId": "rwzlonbvqhodo0eqts34"
+  },
+  {
+    "nombre": "Mini Cooper",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771429/general/u6jqdpwfqz0bjzb5qib1.webp",
+    "fotoPublicId": "u6jqdpwfqz0bjzb5qib1"
+  },
+  {
+    "nombre": "Nissan",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771430/general/eoxqohbhkdneetyfq3py.webp",
+    "fotoPublicId": "eoxqohbhkdneetyfq3py"
+  },
+  {
+    "nombre": "Peugeot",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771431/general/hkxyw7suvarg0yttg36j.webp",
+    "fotoPublicId": "hkxyw7suvarg0yttg36j"
+  },
+  {
+    "nombre": "RAM",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771432/general/kulclliie5uv6mhov0gx.webp",
+    "fotoPublicId": "kulclliie5uv6mhov0gx"
+  },
+  {
+    "nombre": "Renault",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771433/general/cvoei1kpdghqe3jqro49.webp",
+    "fotoPublicId": "cvoei1kpdghqe3jqro49"
+  },
+  {
+    "nombre": "Suzuki",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771434/general/fuosla6uafjnk2nxmn6u.webp",
+    "fotoPublicId": "fuosla6uafjnk2nxmn6u"
+  },
+  {
+    "nombre": "Toyota",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771435/general/elyuuuc3bbh52tcg6m3t.webp",
+    "fotoPublicId": "elyuuuc3bbh52tcg6m3t"
+  },
+  {
+    "nombre": "Voge",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771436/general/liikg9vvcfc0ggs1nbv9.webp",
+    "fotoPublicId": "liikg9vvcfc0ggs1nbv9"
+  },
+  {
+    "nombre": "Volkswagen",
+    "fotoUrl": "https://res.cloudinary.com/lo5kdwnz/image/upload/v1790771437/general/dp6mw6unxejrrrdyf3gk.webp",
+    "fotoPublicId": "dp6mw6unxejrrrdyf3gk"
+  }
+]

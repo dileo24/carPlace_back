@@ -18,6 +18,10 @@ module.exports = sequelize => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      patente: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       motor: {
         type: DataTypes.STRING,
         allowNull: false,

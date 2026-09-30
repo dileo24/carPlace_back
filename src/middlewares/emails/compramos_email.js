@@ -31,7 +31,7 @@ const sendCarFormEmail = async (req, res, next) => {
       // autenticada (EMAIL_FROM) — antes se mandaba `from: email` y Gmail lo
       // reescribía solo, mostrando el nombre de perfil de esa cuenta.
       // Ahora queda explícito en el código, sin depender de esa config.
-      from: `"Charly y Joaco Automotores" <${process.env.EMAIL_FROM}>`,
+      from: `"Car Place" <${process.env.EMAIL_FROM}>`,
       replyTo: email,
       to: destinatarios,
       subject: `Solicitud de venta de vehículo - ${marca} ${modelo}`,
